@@ -87,22 +87,88 @@ for i in range(len(arrays_np) - sequence_length):
 input_sequences = np.array(input_sequences)
 output_values = np.array(output_values)
 
+def rmse(y_true, y_pred):
+    return K.sqrt(K.mean(K.square(y_pred - y_true)))
+
+def r_squared(y_true, y_pred):
+    SS_res =  K.sum(K.square(y_true - y_pred)) 
+    SS_tot = K.sum(K.square(y_true - K.mean(y_true))) 
+    return 1 - SS_res/(SS_tot + K.epsilon())
+
+def lr_schedule(epoch, lr):
+    if epoch < 100:
+        return 1e-2
+    if epoch < 500:
+        return 1e-3
+    else:
+        return 1e-4
+
+def average_relative_rmse(y_true, y_pred):
+    return K.sqrt(K.mean(K.square((y_pred - y_true) / K.clip(K.abs(y_true), K.epsilon(), None))))
+
+#def average_relative_error(y_true, y_pred):
+    return K.mean(K.abs((y_pred - y_true) / K.clip(K.abs(y_true), K.epsilon(), None)))
+
+def accuracy(y_true, y_pred):
+    abs_diff = K.abs(y_true - y_pred)
+    threshold = 0.3 * y_true
+    accurate_predictions = K.less_equal(abs_diff, threshold)
+    accuracy = K.mean(accurate_predictions)
+    return accuracy
+
+#def lr_range_test(epoch, lr):
+    # Start with a very small learning rate and increase exponentially
+    return 10 ** (epoch / 20)  # Adjust the exponent as needed
+
+#def explained_variance(y_true, y_pred):
+    return 1 - K.var(y_true - y_pred) / K.var(y_true)
+
+lr_scheduler = LearningRateScheduler(lr_schedule)
+early_stopping = EarlyStopping(monitor='val_loss', patience=150, verbose=1, restore_best_weights=True)
+
+initial_lr = 1e-2
+sequence_length =10
+
+input_sequences_reshaped = input_sequences.reshape(input_sequences.shape[0], input_sequences.shape[1], -1)
+
+train_size = int(0.7 * input_sequences_reshaped.shape[0])
+val_size = int(0.1 * input_sequences_reshaped.shape[0])
+test_size = input_sequences_reshaped.shape[0] - train_size - val_size
+
+X_train = input_sequences_reshaped[:train_size]
+X_val = input_sequences_reshaped[train_size:train_size + val_size]
+X_test = input_sequences_reshaped[train_size + val_size:]
+y_train = output_values[:train_size]
+y_val = output_values[train_size:train_size + val_size]
+y_test = output_values[train_size + val_size:]
+
+print("X_train shape:", X_train.shape)
+print("X_val shape:", X_val.shape)
+print("X_test shape:", X_test.shape)
+print("y_train shape:", y_train.shape)
+print("y_val shape:", y_val.shape)
+print("y_test shape:", y_test.shape)
 
 model = Sequential()
-model.add(LSTM(units=64, input_shape=(10, 500 * 500 * 6)))  # 10 for a sequence length of 10 as defined above
-model.add(Dense(units=100, activation='relu'))  # 100 neurons, first hidden layer, relu
-model.add(Dense(units=100, activation='relu'))  # 100 neurons, second hidden layer, relu
-model.add(Dense(units=500 * 500 * 6, activation='linear'))  # output layer, linear activation
-model.add(Reshape((500, 500, 6)))
-model.compile(optimizer='adam', loss='mse')  # compile with adam, mse
+model.add(LSTM(units=256, return_sequences=True, input_shape=(sequence_length, 50 * 50 * 6), kernel_regularizer=l2(0.03)))
+#model.add(Dropout(0.2)) 
+model.add(LSTM(units=256, return_sequences=True, input_shape=(sequence_length, 50 * 50 * 6), kernel_regularizer=l2(0.03)))
+#model.add(Dropout(0.2)) 
+model.add(LSTM(units=256))
+#model.add(Dropout(0.2)) 
+model.add(Dense(units=256, kernel_regularizer=l2(0.03)))
+#model.add(Dropout(0.2)) 
+model.add(Dense(units=256, kernel_regularizer=l2(0.03)))
+#model.add(Dropout(0.2)) 
+model.add(Dense(units=256, kernel_regularizer=l2(0.03)))
+model.add(Dense(units=50 * 50 * 6, activation='linear'))
+model.add(Reshape((50, 50, 6)))
+model.compile(optimizer=Adam(learning_rate=initial_lr), loss='mse', metrics=[r_squared, 'mape', accuracy, average_relative_rmse, 'msle', 'mae'])
 print(model.summary())
 
-input_sequences_reshaped = input_sequences.reshape(input_sequences.shape[0], 10, -1)
 
-# train
-history = model.fit(input_sequences_reshaped, output_values, epochs=10, batch_size=32, validation_split=0.2)
+history = model.fit(X_train, y_train, epochs=1500, batch_size=100, validation_data=(X_val, y_val), callbacks=[lr_scheduler, early_stopping])
 print("Training Loss:", history.history['loss'])
 
-# evaluate
-loss = model.evaluate(input_sequences, output_values)
+loss = model.evaluate(X_test, y_test)
 print("Test Loss:", loss)
