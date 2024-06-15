@@ -1,0 +1,26 @@
+<CompuCell3DLatticeData Version="1.0">
+   <Dimensions x="50" y="50" z="1"/>
+   <Lattice Type="Square"/>
+   <Output CoreFileName="Step" Directory="C:\Users\rbumb\CC3DWorkspace\endothelial_cc3d_06_13_2024_16_21_13\LatticeData" Frequency="1" NumberOfSteps="1000001"/>
+   <CellType TypeId="0" TypeName="Medium"/>
+   <CellType TypeId="1" TypeName="endothelial"/>
+   <CellType TypeId="2" TypeName="neutrophil"/>
+   <CellType TypeId="3" TypeName="monocyte"/>
+   <CellType TypeId="4" TypeName="fibroblast"/>
+   <CellType TypeId="5" TypeName="neutrophila"/>
+   <CellType TypeId="6" TypeName="neutrophilndn"/>
+   <CellType TypeId="7" TypeName="monocyter"/>
+   <CellType TypeId="8" TypeName="macrophage1"/>
+   <CellType TypeId="9" TypeName="macrophage2"/>
+   <CellType TypeId="10" TypeName="myofibroblast"/>
+   <Fields>
+      <Field Name="Cell_Field" Type="CellField"/>
+      <Field Name="cytokine" Type="ConField"/>
+      <Field Name="il1" Type="ScalarField"/>
+      <Field Name="il10" Type="ScalarField"/>
+      <Field Name="il6" Type="ScalarField"/>
+      <Field Name="il8" Type="ScalarField"/>
+      <Field Name="tgf" Type="ScalarField"/>
+      <Field Name="tnf" Type="ScalarField"/>
+   </Fields>
+</CompuCell3DLatticeData>
