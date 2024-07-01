@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
-#from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
 import pandas as pd
 import os
 import deepxde as dde
@@ -105,7 +106,7 @@ print(input_sequences.shape)
 print(output_values.shape)
 
 # Simulation parameters
-nx = 100
+nx = 250
 true_size = 5
 s_mcs = 60.0
 h_mcs = 1 / 60.0
